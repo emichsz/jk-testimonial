@@ -88,6 +88,8 @@ class TC_Settings {
 		$out['video_max_seconds'] = max( 10, min( 600, absint( $input['video_max_seconds'] ?? $defaults['video_max_seconds'] ) ) );
 		$out['video_max_mb']      = max( 5, min( 1024, absint( $input['video_max_mb'] ?? $defaults['video_max_mb'] ) ) );
 
+		$out['events'] = sanitize_textarea_field( $input['events'] ?? '' );
+
 		$notify              = sanitize_email( $input['notify_email'] ?? '' );
 		$out['notify_email'] = $notify ? $notify : $defaults['notify_email'];
 
@@ -195,6 +197,13 @@ class TC_Settings {
 										self::checkbox( $s, 'show_photo', __( 'Photo upload', 'testimonial-collector' ) );
 										self::checkbox( $s, 'show_title', __( 'Testimonial title (text submissions)', 'testimonial-collector' ) );
 										?>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row"><label for="tc_events"><?php esc_html_e( 'Events / programs / trainings', 'testimonial-collector' ); ?></label></th>
+									<td>
+										<textarea id="tc_events" name="<?php echo esc_attr( $opt ); ?>[events]" rows="4" class="large-text" placeholder="<?php esc_attr_e( "Leadership training 2026\nTheory U workshop\nTeam retreat", 'testimonial-collector' ); ?>"><?php echo esc_textarea( $s['events'] ); ?></textarea>
+										<p class="description"><?php esc_html_e( 'One per line. If filled, submitters pick from a dropdown which event or program their testimonial is about. Leave empty to hide the dropdown.', 'testimonial-collector' ); ?></p>
 									</td>
 								</tr>
 								<tr>
