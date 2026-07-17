@@ -57,6 +57,7 @@ function tc_default_settings() {
 		'show_title'        => 0,
 		'verify_email'      => 0,
 		'ios_no_record'     => 0,
+		'events'            => '', // one per line; empty = no dropdown on the form
 		'video_max_seconds' => 120,
 		'video_max_mb'      => 200,
 		'notify_email'      => get_option( 'admin_email' ),
