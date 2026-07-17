@@ -59,6 +59,7 @@ class TC_CPT {
 			'_tc_consent',   // 1 if consent given
 			'_tc_social',    // social / website URL
 			'_tc_headline',  // optional testimonial title
+			'_tc_event',     // event / program / training the testimonial is about
 			'_tc_verify_key' // email verification key (empty once verified)
 		);
 	}
@@ -78,6 +79,7 @@ class TC_CPT {
 			'consent'   => (bool) get_post_meta( $post_id, '_tc_consent', true ),
 			'social'    => get_post_meta( $post_id, '_tc_social', true ),
 			'headline'  => get_post_meta( $post_id, '_tc_headline', true ),
+			'event'     => get_post_meta( $post_id, '_tc_event', true ),
 		);
 	}
 }
