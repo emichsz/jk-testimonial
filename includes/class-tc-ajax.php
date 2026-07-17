@@ -35,6 +35,7 @@ class TC_Ajax {
 		$role     = isset( $_POST['role'] ) ? sanitize_text_field( wp_unslash( $_POST['role'] ) ) : '';
 		$social   = isset( $_POST['social'] ) ? esc_url_raw( wp_unslash( $_POST['social'] ) ) : '';
 		$headline = isset( $_POST['headline'] ) ? sanitize_text_field( wp_unslash( $_POST['headline'] ) ) : '';
+		$event    = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
 		$rating   = isset( $_POST['rating'] ) ? max( 1, min( 5, absint( $_POST['rating'] ) ) ) : 5;
 		$type     = ( isset( $_POST['type'] ) && 'video' === $_POST['type'] ) ? 'video' : 'text';
 		$content  = isset( $_POST['content'] ) ? sanitize_textarea_field( wp_unslash( $_POST['content'] ) ) : '';
@@ -147,6 +148,13 @@ class TC_Ajax {
 		}
 		if ( $headline ) {
 			update_post_meta( $post_id, '_tc_headline', $headline );
+		}
+		if ( $event ) {
+			// Only accept values that exist in the configured list.
+			$allowed_events = array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) );
+			if ( in_array( $event, $allowed_events, true ) ) {
+				update_post_meta( $post_id, '_tc_event', $event );
+			}
 		}
 		if ( $video_id ) {
 			update_post_meta( $post_id, '_tc_video_id', $video_id );
