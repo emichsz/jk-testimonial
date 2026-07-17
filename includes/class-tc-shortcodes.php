@@ -90,6 +90,7 @@ class TC_Shortcodes {
 
 		$collection = $settings['collection_type'];
 		$questions  = array_filter( array_map( 'trim', explode( "\n", $strings['questions'] ) ) );
+		$events     = array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) );
 		$theme_cls  = ( 'dark' === $settings['theme'] ) ? ' tc-theme-dark' : '';
 		$default_type = ( 'video' === $collection ) ? 'video' : 'text';
 
@@ -159,6 +160,16 @@ class TC_Shortcodes {
 					<label class="tc-label"><?php echo esc_html( $strings['label_email'] ); ?> *
 						<input type="email" name="email" class="tc-input" required>
 					</label>
+					<?php if ( ! empty( $events ) ) : ?>
+						<label class="tc-label"><?php echo esc_html( $strings['label_event'] ); ?>
+							<select name="event" class="tc-input">
+								<option value=""><?php echo esc_html( $strings['event_placeholder'] ); ?></option>
+								<?php foreach ( $events as $event ) : ?>
+									<option value="<?php echo esc_attr( $event ); ?>"><?php echo esc_html( $event ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</label>
+					<?php endif; ?>
 					<?php if ( $settings['show_role'] ) : ?>
 						<label class="tc-label"><?php echo esc_html( $strings['label_role'] ); ?>
 							<input type="text" name="role" class="tc-input">
@@ -308,6 +319,9 @@ class TC_Shortcodes {
 				</div>
 				<?php if ( $data['role'] ) : ?>
 					<div class="tc-role"><?php echo esc_html( $data['role'] ); ?></div>
+				<?php endif; ?>
+				<?php if ( $data['event'] ) : ?>
+					<div class="tc-event"><?php echo esc_html( $data['event'] ); ?></div>
 				<?php endif; ?>
 				<?php if ( $show_stars ) { echo self::stars_html( $data['rating'] ); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ } ?>
 				<?php if ( $data['headline'] ) : ?>
