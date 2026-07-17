@@ -1,0 +1,139 @@
+/* Testimonial Collector — admin styles */
+
+.tc-admin-video {
+	max-width: 220px;
+	max-height: 140px;
+	border-radius: 6px;
+	display: block;
+}
+
+.tc-admin-stars {
+	color: #dba617;
+	font-size: 15px;
+	letter-spacing: 1px;
+}
+
+.tc-status-approved {
+	color: #00801b;
+}
+
+.tc-status-pending {
+	color: #b45309;
+}
+
+/* Settings layout */
+.tc-settings-layout {
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+}
+
+.tc-settings-main {
+	flex: 1 1 620px;
+	min-width: 0;
+}
+
+.tc-settings-preview {
+	flex: 0 0 420px;
+	position: sticky;
+	top: 48px;
+	max-width: 420px;
+}
+
+@media (max-width: 1280px) {
+	.tc-settings-layout {
+		flex-direction: column;
+	}
+
+	.tc-settings-preview {
+		position: static;
+		flex: 1 1 auto;
+		width: 100%;
+		max-width: 640px;
+	}
+}
+
+.tc-preview-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	font-size: 12px;
+	color: #50575e;
+	margin-bottom: 10px;
+}
+
+.tc-preview-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #00ba37;
+	display: inline-block;
+}
+
+.tc-preview-switch {
+	margin-left: auto;
+	display: flex;
+	gap: 6px;
+}
+
+.tc-preview-mode-btn.active {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+}
+
+.tc-preview-stage .tc-container {
+	margin: 0;
+	padding: 28px 20px;
+	font-size: 14px;
+}
+
+.tc-preview-cta {
+	display: flex;
+	gap: 10px;
+	justify-content: center;
+	margin: 18px 0;
+	flex-wrap: wrap;
+}
+
+.tc-preview-cta .tc-btn {
+	width: auto;
+	margin-top: 0;
+}
+
+.tc-preview-stars {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 8px;
+}
+
+.tc-preview-stars .tc-rating-star {
+	cursor: default;
+	font-size: 1.4em;
+}
+
+.tc-settings-wrap .tc-pair {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.tc-settings-wrap .tc-pair-lang {
+	font-weight: 700;
+	width: 28px;
+	flex-shrink: 0;
+	padding-top: 6px;
+}
+
+.tc-media-preview {
+	margin-bottom: 8px;
+}
+
+.tc-media-preview img {
+	max-height: 72px;
+	max-width: 220px;
+	border-radius: 6px;
+	display: block;
+}
