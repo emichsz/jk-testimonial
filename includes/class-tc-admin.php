@@ -90,6 +90,9 @@ class TC_Admin {
 				if ( $data['role'] ) {
 					echo '<br><em>' . esc_html( $data['role'] ) . '</em>';
 				}
+				if ( $data['event'] ) {
+					echo '<br>' . esc_html( $data['event'] );
+				}
 				break;
 
 			case 'tc_status':
@@ -168,6 +171,9 @@ class TC_Admin {
 		<?php endif; ?>
 		<?php if ( $data['social'] ) : ?>
 			<p><strong><?php esc_html_e( 'Link:', 'testimonial-collector' ); ?></strong> <a href="<?php echo esc_url( $data['social'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $data['social'] ); ?></a></p>
+		<?php endif; ?>
+		<?php if ( $data['event'] ) : ?>
+			<p><strong><?php esc_html_e( 'Event / program:', 'testimonial-collector' ); ?></strong> <?php echo esc_html( $data['event'] ); ?></p>
 		<?php endif; ?>
 		<p><strong><?php esc_html_e( 'Rating:', 'testimonial-collector' ); ?></strong> <?php echo esc_html( str_repeat( '★', max( 0, min( 5, $data['rating'] ) ) ) ); ?></p>
 		<p><strong><?php esc_html_e( 'Consent given:', 'testimonial-collector' ); ?></strong> <?php echo $data['consent'] ? esc_html__( 'Yes', 'testimonial-collector' ) : esc_html__( 'No', 'testimonial-collector' ); ?></p>
