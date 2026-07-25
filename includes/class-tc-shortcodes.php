@@ -54,7 +54,7 @@ class TC_Shortcodes {
 	}
 
 	/**
-	 * [testimonial_form]
+	 * [testimonial_form event="..."]
 	 */
 	public static function render_form( $atts ) {
 		self::enqueue_common();
@@ -62,6 +62,7 @@ class TC_Shortcodes {
 
 		$settings = tc_get_settings();
 		$strings  = TC_Strings::get();
+		$atts     = shortcode_atts( array( 'event' => '' ), $atts, 'testimonial_form' );
 
 		wp_localize_script(
 			'tc-form',
@@ -91,6 +92,11 @@ class TC_Shortcodes {
 		$collection = $settings['collection_type'];
 		$questions  = array_filter( array_map( 'trim', explode( "\n", $strings['questions'] ) ) );
 		$events     = array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) );
+		$forced_event = trim( (string) $atts['event'] );
+		// A shortcode-ban átadott esemény csak akkor él, ha szerepel a beállított listában.
+		if ( '' !== $forced_event && ! in_array( $forced_event, $events, true ) ) {
+			$forced_event = '';
+		}
 		$theme_cls  = ( 'dark' === $settings['theme'] ) ? ' tc-theme-dark' : '';
 		$default_type = ( 'video' === $collection ) ? 'video' : 'text';
 
@@ -160,7 +166,9 @@ class TC_Shortcodes {
 					<label class="tc-label"><?php echo esc_html( $strings['label_email'] ); ?> *
 						<input type="email" name="email" class="tc-input" required>
 					</label>
-					<?php if ( ! empty( $events ) ) : ?>
+					<?php if ( '' !== $forced_event ) : ?>
+						<input type="hidden" name="event" value="<?php echo esc_attr( $forced_event ); ?>">
+					<?php elseif ( ! empty( $events ) ) : ?>
 						<label class="tc-label"><?php echo esc_html( $strings['label_event'] ); ?>
 							<select name="event" class="tc-input">
 								<option value=""><?php echo esc_html( $strings['event_placeholder'] ); ?></option>
@@ -223,13 +231,13 @@ class TC_Shortcodes {
 		$html = ob_get_clean();
 
 		if ( $settings['form_show_wall'] ) {
-			$html .= self::render_wall( array() );
+			$html .= self::render_wall( ( '' !== $forced_event ) ? array( 'event' => $forced_event ) : array() );
 		}
 		return $html;
 	}
 
 	/**
-	 * [testimonial_wall per_page="6"]
+	 * [testimonial_wall per_page="6" event="..."]
 	 */
 	public static function render_wall( $atts ) {
 		self::enqueue_common();
@@ -237,21 +245,30 @@ class TC_Shortcodes {
 
 		$settings = tc_get_settings();
 		$strings  = TC_Strings::get();
-		$atts     = shortcode_atts( array( 'per_page' => $settings['per_page'] ), $atts, 'testimonial_wall' );
+		$atts     = shortcode_atts( array( 'per_page' => $settings['per_page'], 'event' => '' ), $atts, 'testimonial_wall' );
 		$per_page = max( 1, min( 24, (int) $atts['per_page'] ) );
+		$event    = trim( (string) $atts['event'] );
 
 		$theme_cls = ( 'dark' === $settings['theme'] ) ? ' tc-theme-dark' : '';
 
-		$query = new WP_Query(
-			array(
-				'post_type'      => TC_CPT,
-				'post_status'    => 'publish',
-				'posts_per_page' => 200,
-				'orderby'        => 'date',
-				'order'          => 'DESC',
-				'no_found_rows'  => true,
-			)
+		$query_args = array(
+			'post_type'      => TC_CPT,
+			'post_status'    => 'publish',
+			'posts_per_page' => 200,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
 		);
+		if ( '' !== $event ) {
+			$query_args['meta_query'] = array(
+				array(
+					'key'   => '_tc_event',
+					'value' => $event,
+				),
+			);
+		}
+
+		$query = new WP_Query( $query_args );
 
 		ob_start();
 		?>
