@@ -137,3 +137,21 @@
 	border-radius: 6px;
 	display: block;
 }
+
+/* Editable details metabox */
+.tc-mb-field {
+	margin: 0 0 12px;
+}
+.tc-mb-field > label {
+	display: block;
+	margin-bottom: 3px;
+}
+.tc-mb-field .description {
+	display: block;
+	margin-top: 3px;
+}
+.tc-mb-consent {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
