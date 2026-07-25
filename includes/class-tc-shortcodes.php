@@ -245,6 +245,14 @@ class TC_Shortcodes {
 
 		$settings = tc_get_settings();
 		$strings  = TC_Strings::get();
+		wp_localize_script(
+			'tc-wall',
+			'tcWall',
+			array(
+				'readMore' => $strings['read_more'],
+				'readLess' => $strings['read_less'],
+			)
+		);
 		$atts     = shortcode_atts( array( 'per_page' => $settings['per_page'], 'event' => '' ), $atts, 'testimonial_wall' );
 		$per_page = max( 1, min( 24, (int) $atts['per_page'] ) );
 		$event    = trim( (string) $atts['event'] );

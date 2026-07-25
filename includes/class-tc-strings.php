@@ -72,6 +72,8 @@ class TC_Strings {
 			'sec_left'        => 'másodperc van hátra',
 			'prev'            => 'Előző',
 			'next'            => 'Következő',
+			'read_more'       => 'Tovább',
+			'read_less'       => 'Kevesebb',
 			'no_items'        => 'Még nincsenek jóváhagyott vélemények.',
 		);
 
@@ -117,6 +119,8 @@ class TC_Strings {
 			'sec_left'        => 'seconds left',
 			'prev'            => 'Previous',
 			'next'            => 'Next',
+			'read_more'       => 'Read more',
+			'read_less'       => 'Show less',
 			'no_items'        => 'No approved testimonials yet.',
 		);
 

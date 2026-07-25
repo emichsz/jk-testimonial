@@ -471,6 +471,49 @@ a.tc-name:hover {
 	color: inherit;
 }
 
+/* Long text: clamp with a fade, expand on click */
+.tc-card-text .tc-text.tc-clampable {
+	position: relative;
+	max-height: 160px;
+	overflow: hidden;
+}
+
+.tc-card-text .tc-text.tc-clampable::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 3em;
+	background: linear-gradient(to bottom, transparent, var(--tc-primary));
+	pointer-events: none;
+}
+
+.tc-card-text .tc-text.tc-expanded {
+	max-height: none;
+}
+
+.tc-card-text .tc-text.tc-expanded::after {
+	display: none;
+}
+
+.tc-card-text .tc-readmore {
+	background: none;
+	border: 0;
+	padding: 6px 0 0;
+	margin: 0;
+	color: inherit;
+	font: inherit;
+	font-weight: 700;
+	text-decoration: underline;
+	cursor: pointer;
+	opacity: 0.9;
+}
+
+.tc-card-text .tc-readmore:hover {
+	opacity: 1;
+}
+
 /* Video card */
 .tc-card-video {
 	position: relative;

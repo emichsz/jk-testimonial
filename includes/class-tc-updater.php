@@ -22,7 +22,7 @@ class TC_Updater {
 	}
 
 	/**
-	 * Latest release info from GitHub (cached for 6 hours).
+	 * Latest release info from GitHub (cached for 1 hour).
 	 */
 	protected static function get_release() {
 		$cached = get_site_transient( self::CACHE_KEY );
@@ -51,7 +51,7 @@ class TC_Updater {
 			$release = self::release_from_main_branch();
 		}
 
-		set_site_transient( self::CACHE_KEY, $release, $release ? 6 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
+		set_site_transient( self::CACHE_KEY, $release, $release ? HOUR_IN_SECONDS : 15 * MINUTE_IN_SECONDS );
 		return $release;
 	}
 

@@ -2,6 +2,37 @@
 (function () {
 	'use strict';
 
+	var cfg = window.tcWall || {};
+	var READ_MORE = cfg.readMore || 'Read more';
+	var READ_LESS = cfg.readLess || 'Show less';
+	var CLAMP_PX = 160; // must match .tc-text.tc-clampable max-height in CSS
+
+	// Collapse an overflowing text testimonial with a fade + read-more toggle.
+	// Measured only while the card is visible (hidden cards report 0 height).
+	function setupClamp(card) {
+		if (card.dataset.tcClampDone) {
+			return;
+		}
+		var textEl = card.querySelector('.tc-text');
+		if (!textEl || card.offsetParent === null) {
+			return; // not a text card, or not visible yet — try again when shown
+		}
+		card.dataset.tcClampDone = '1';
+		if (textEl.scrollHeight <= CLAMP_PX + 8) {
+			return; // short enough, leave as is
+		}
+		textEl.classList.add('tc-clampable');
+		var btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'tc-readmore';
+		btn.textContent = READ_MORE;
+		btn.addEventListener('click', function () {
+			var expanded = textEl.classList.toggle('tc-expanded');
+			btn.textContent = expanded ? READ_LESS : READ_MORE;
+		});
+		textEl.insertAdjacentElement('afterend', btn);
+	}
+
 	document.querySelectorAll('.tc-carousel').forEach(function (carousel) {
 		var cards = Array.prototype.slice.call(carousel.querySelectorAll('.tc-card'));
 		var grid = carousel.querySelector('.tc-grid');
@@ -53,6 +84,11 @@
 			cards.forEach(function (card, idx) {
 				var visible = Math.floor(idx / perPage) === current;
 				card.hidden = !visible;
+				if (visible) {
+					// Cards start hidden, so clamp is measured the first time a
+					// card is actually shown on its page.
+					setupClamp(card);
+				}
 				if (!visible) {
 					// Pause any playing video on hidden pages.
 					var video = card.querySelector('video');
