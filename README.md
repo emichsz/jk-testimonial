@@ -9,6 +9,7 @@ WordPress plugin szöveges és videós vélemények (testimonialok) gyűjtésér
 - **Két shortcode**:
   - `[testimonial_form]` — beküldő űrlap
   - `[testimonial_wall]` — jóváhagyott vélemények lapozható fala (`per_page` attribútummal felülírható a lapméret: `[testimonial_wall per_page="4"]`)
+  - **Esemény-szűrés**: mindkét shortcode elfogad `event` attribútumot. `[testimonial_wall event="Vezetőképzés 2026"]` csak az adott eseményhez tartozó véleményeket mutatja; `[testimonial_form event="Vezetőképzés 2026"]` fix eseményhez köti a beküldést (a legördülő helyett). Az érték pontosan egyezzen a Settings → Events lista egyik sorával.
 - **Élő előnézet** a beállítások oldalon: az űrlap és a köszönő oldal azonnal mutatja a módosításokat
 - **Testreszabható**: logó, színek (elsődleges, csillag, háttér), világos/sötét téma, minden szöveg magyarul és angolul
 - **Vezérlő kérdések** (Questions) a beküldőnek
@@ -34,7 +35,7 @@ WordPress plugin szöveges és videós vélemények (testimonialok) gyűjtésér
 
 1. **Beállítások**: Testimonials → Settings — nyelv, logó, színek, szövegek, kérdések, köszönő oldal. Jobb oldalon élő előnézet.
 2. **Beküldő oldal**: hozz létre egy oldalt, illeszd be: `[testimonial_form]`
-3. **Vélemény fal**: az oldalra, ahol a jóváhagyott vélemények jelenjenek meg: `[testimonial_wall]`
+3. **Vélemény fal**: az oldalra, ahol a jóváhagyott vélemények jelenjenek meg: `[testimonial_wall]`. Külön esemény aloldalhoz: `[testimonial_wall event="Vezetőképzés 2026"]` (és/vagy `[testimonial_form event="Vezetőképzés 2026"]`).
 4. **Jóváhagyás**: Testimonials → All Testimonials — a függőben lévőknél *Approve* / *Reject* gomb. A videó közvetlenül a listában és a szerkesztő oldalsávjában is lejátszható.
 
 ## Frissítés GitHubról

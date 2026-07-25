@@ -148,6 +148,12 @@ class TC_Settings {
 				<code>[testimonial_form]</code> — <?php esc_html_e( 'submission form', 'testimonial-collector' ); ?>,
 				<code>[testimonial_wall]</code> — <?php esc_html_e( 'approved testimonials wall', 'testimonial-collector' ); ?>
 			</p>
+			<p class="description">
+				<?php esc_html_e( 'Attributes:', 'testimonial-collector' ); ?>
+				<code>[testimonial_wall per_page="6"]</code> — <?php esc_html_e( 'page size.', 'testimonial-collector' ); ?>
+				<code>[testimonial_wall event="…"]</code> / <code>[testimonial_form event="…"]</code> —
+				<?php esc_html_e( 'restrict to one event/program: the wall shows only its testimonials, the form tags submissions with it. The value must exactly match a line from the Events list below.', 'testimonial-collector' ); ?>
+			</p>
 
 			<div class="tc-settings-layout">
 				<div class="tc-settings-main">
@@ -203,7 +209,7 @@ class TC_Settings {
 									<th scope="row"><label for="tc_events"><?php esc_html_e( 'Events / programs / trainings', 'testimonial-collector' ); ?></label></th>
 									<td>
 										<textarea id="tc_events" name="<?php echo esc_attr( $opt ); ?>[events]" rows="4" class="large-text" placeholder="<?php esc_attr_e( "Leadership training 2026\nTheory U workshop\nTeam retreat", 'testimonial-collector' ); ?>"><?php echo esc_textarea( $s['events'] ); ?></textarea>
-										<p class="description"><?php esc_html_e( 'One per line. If filled, submitters pick from a dropdown which event or program their testimonial is about. Leave empty to hide the dropdown.', 'testimonial-collector' ); ?></p>
+										<p class="description"><?php esc_html_e( 'One per line. If filled, submitters pick from a dropdown which event or program their testimonial is about. Leave empty to hide the dropdown. You can also pin a form or wall to one event with the shortcode attribute, e.g. [testimonial_wall event="Leadership training 2026"] — the value must match a line above exactly.', 'testimonial-collector' ); ?></p>
 									</td>
 								</tr>
 								<tr>
