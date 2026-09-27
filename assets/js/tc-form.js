@@ -7,10 +7,198 @@
 	}
 
 	var i18n = tcForm.i18n || {};
+	// wp_localize_script turns numbers into strings, and "0" is truthy — compare numerically.
+	var iosNoRecord = parseInt(tcForm.iosNoRecord, 10) === 1;
+	var consentRequired = parseInt(tcForm.consentRequired, 10) === 1;
 
 	function isIOS() {
 		return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+	}
+
+	var PHOTO_SIZE = 600;
+
+	// Phones and tablets: the native camera app takes better selfies than a live preview.
+	function isTouchDevice() {
+		return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+	}
+
+	// Center-crop a drawable (img / video / canvas) to a square JPEG, at most PHOTO_SIZE px.
+	// mirror: flip horizontally, so a live selfie is saved the way the person saw it.
+	function squareJpeg(src, w, h, mirror) {
+		return new Promise(function (resolve) {
+			var side = Math.min(w, h);
+			var size = Math.min(PHOTO_SIZE, side);
+			var canvas = document.createElement('canvas');
+			canvas.width = canvas.height = size;
+			var ctx = canvas.getContext('2d');
+			if (mirror) {
+				ctx.translate(size, 0);
+				ctx.scale(-1, 1);
+			}
+			ctx.drawImage(src, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+			canvas.toBlob(resolve, 'image/jpeg', 0.88);
+		});
+	}
+
+	/* ---------- Photo: camera snapshot, upload, or a frame from the video ---------- */
+	function setupPhoto(wrap) {
+		if (!wrap) {
+			return null;
+		}
+		var img = wrap.querySelector('.tc-photo-img');
+		var live = wrap.querySelector('.tc-photo-live');
+		var placeholder = wrap.querySelector('.tc-photo-placeholder');
+		var note = wrap.querySelector('.tc-photo-note');
+		var takeBtn = wrap.querySelector('.tc-photo-take');
+		var snapBtn = wrap.querySelector('.tc-photo-snap');
+		var cancelBtn = wrap.querySelector('.tc-photo-cancel');
+		var uploadBtn = wrap.querySelector('.tc-photo-upload');
+		var removeBtn = wrap.querySelector('.tc-photo-remove');
+		var captureInput = wrap.querySelector('.tc-photo-capture');
+		var fileInput = wrap.querySelector('.tc-photo-file');
+
+		var hint = note.textContent;
+		var canLive = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+		var blob = null;
+		var source = ''; // camera | upload | video
+		var stream = null;
+		var url = null;
+
+		function show(state) { // empty | live | photo
+			placeholder.hidden = state !== 'empty';
+			live.hidden = state !== 'live';
+			img.hidden = state !== 'photo';
+			takeBtn.hidden = state === 'live';
+			uploadBtn.hidden = state === 'live';
+			snapBtn.hidden = state !== 'live';
+			cancelBtn.hidden = state !== 'live';
+			removeBtn.hidden = state !== 'photo';
+			takeBtn.textContent = state === 'photo' ? (i18n.photoRetake || 'New photo') : (i18n.photoTake || 'Take a photo');
+		}
+
+		function stopLive() {
+			if (stream) {
+				stream.getTracks().forEach(function (t) { t.stop(); });
+				stream = null;
+			}
+			live.srcObject = null;
+		}
+
+		function setPhoto(b, src) {
+			if (!b) {
+				return;
+			}
+			blob = b;
+			source = src;
+			if (url) {
+				URL.revokeObjectURL(url);
+			}
+			url = URL.createObjectURL(b);
+			img.src = url;
+			note.textContent = src === 'video' ? (i18n.photoFromVideo || hint) : hint;
+			show('photo');
+		}
+
+		function clear() {
+			blob = null;
+			source = '';
+			if (url) {
+				URL.revokeObjectURL(url);
+				url = null;
+			}
+			img.removeAttribute('src');
+			note.textContent = hint;
+			show('empty');
+		}
+
+		function fromFile(file) {
+			if (!file) {
+				return;
+			}
+			var fileUrl = URL.createObjectURL(file);
+			var image = new Image();
+			image.onload = function () {
+				// Browsers apply the EXIF orientation here, so phone photos come out upright.
+				squareJpeg(image, image.naturalWidth, image.naturalHeight, false).then(function (b) {
+					URL.revokeObjectURL(fileUrl);
+					setPhoto(b, 'upload');
+				});
+			};
+			image.onerror = function () {
+				URL.revokeObjectURL(fileUrl);
+			};
+			image.src = fileUrl;
+		}
+
+		function startLive() {
+			navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+				.then(function (s) {
+					stream = s;
+					live.srcObject = s;
+					live.play();
+					show('live');
+				})
+				.catch(function () {
+					note.textContent = i18n.camError || 'Camera error';
+				});
+		}
+
+		takeBtn.addEventListener('click', function () {
+			if (isTouchDevice() || !canLive) {
+				captureInput.click();
+			} else {
+				startLive();
+			}
+		});
+		function snap() {
+			if (!stream) {
+				return; // cancelled meanwhile
+			}
+			squareJpeg(live, live.videoWidth, live.videoHeight, true).then(function (b) {
+				stopLive();
+				setPhoto(b, 'camera');
+			});
+		}
+		snapBtn.addEventListener('click', function () {
+			if (live.videoWidth) {
+				snap();
+			} else {
+				live.addEventListener('loadeddata', snap, { once: true }); // clicked before the first frame
+			}
+		});
+		cancelBtn.addEventListener('click', function () {
+			stopLive();
+			show(blob ? 'photo' : 'empty');
+		});
+		uploadBtn.addEventListener('click', function () {
+			fileInput.click();
+		});
+		[captureInput, fileInput].forEach(function (input) {
+			input.addEventListener('change', function () {
+				fromFile(input.files && input.files[0]);
+				input.value = ''; // picking the same file again must fire change again
+			});
+		});
+		removeBtn.addEventListener('click', clear);
+
+		show('empty');
+
+		return {
+			blob: function () { return blob; },
+			stop: stopLive,
+			// A frame from the testimonial video — only while the person has not chosen a photo themselves.
+			fromVideo: function (video) {
+				if ((source && source !== 'video') || !video.videoWidth) {
+					return;
+				}
+				squareJpeg(video, video.videoWidth, video.videoHeight, false).then(function (b) {
+					if (!source || source === 'video') {
+						setPhoto(b, 'video');
+					}
+				});
+			}
+		};
 	}
 
 	document.querySelectorAll('.tc-form-container').forEach(function (container) {
@@ -27,6 +215,7 @@
 		var submitBtn = form.querySelector('.tc-btn-submit');
 		var thanks = container.querySelector('.tc-thanks');
 		var questions = container.querySelector('.tc-questions');
+		var photo = setupPhoto(form.querySelector('.tc-photo'));
 
 		/* ---------- Tabs ---------- */
 		tabs.forEach(function (tab) {
@@ -92,7 +281,7 @@
 				navigator.mediaDevices.getUserMedia &&
 				window.MediaRecorder);
 
-			if (!recordingSupported || (tcForm.iosNoRecord && isIOS())) {
+			if (!recordingSupported || (iosNoRecord && isIOS())) {
 				camBtn.hidden = true;
 				if (uploadFallback) {
 					uploadFallback.hidden = false;
@@ -178,6 +367,9 @@
 
 				mediaRecorder.onstop = function () {
 					stopTimer();
+					if (photo && !photo.blob()) {
+						photo.fromVideo(preview); // short recording: take the frame before the camera stops
+					}
 					recordedBlob = new Blob(chunks, { type: recordedMime });
 					stopStream();
 					preview.srcObject = null;
@@ -192,6 +384,14 @@
 				};
 
 				mediaRecorder.start();
+				if (photo) {
+					// A couple of seconds in, the person is usually settled and looking at the camera.
+					setTimeout(function () {
+						if (mediaRecorder && mediaRecorder.state === 'recording') {
+							photo.fromVideo(preview);
+						}
+					}, 2000);
+				}
 				recBtn.classList.add('tc-recording');
 				recBtn.textContent = i18n.stop || 'Stop';
 
@@ -208,6 +408,41 @@
 					}
 				}, 1000);
 			});
+
+			// Uploaded video file: grab a frame from it as well (best effort).
+			var videoFileInput = form.querySelector('input[name="video_file"]');
+			if (photo && videoFileInput) {
+				videoFileInput.addEventListener('change', function () {
+					var file = videoFileInput.files && videoFileInput.files[0];
+					if (!file) {
+						return;
+					}
+					var v = document.createElement('video');
+					var vUrl = URL.createObjectURL(file);
+					var done = false;
+					function grab() {
+						if (done) {
+							return;
+						}
+						done = true;
+						photo.fromVideo(v);
+						URL.revokeObjectURL(vUrl);
+					}
+					v.muted = true;
+					v.playsInline = true;
+					v.preload = 'auto';
+					v.addEventListener('loadeddata', function () {
+						var t = (isFinite(v.duration) && v.duration > 0) ? Math.min(2, v.duration / 3) : 0;
+						if (t > 0) {
+							v.currentTime = t;
+						} else {
+							grab();
+						}
+					});
+					v.addEventListener('seeked', grab);
+					v.src = vUrl;
+				});
+			}
 
 			retakeBtn.addEventListener('click', function () {
 				recordedBlob = null;
@@ -240,7 +475,7 @@
 				showMessage(i18n.required || 'Required fields missing', true);
 				return;
 			}
-			if (tcForm.consentRequired && consentBox && !consentBox.checked) {
+			if (consentRequired && consentBox && !consentBox.checked) {
 				showMessage(i18n.required || 'Required fields missing', true);
 				return;
 			}
@@ -273,9 +508,9 @@
 				fd.append('tc_website', hp.value);
 			}
 
-			var photo = form.querySelector('input[name="photo"]');
-			if (photo && photo.files && photo.files[0]) {
-				fd.append('photo', photo.files[0]);
+			var photoBlob = photo && photo.blob();
+			if (photoBlob) {
+				fd.append('photo', photoBlob, 'photo.jpg');
 			}
 
 			if (type === 'video') {
@@ -330,6 +565,9 @@
 				})
 				.then(function (data) {
 					if (data && data.success) {
+						if (photo) {
+							photo.stop();
+						}
 						form.hidden = true;
 						if (questions) {
 							questions.hidden = true;

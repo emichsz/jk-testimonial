@@ -17,6 +17,7 @@ WordPress plugin szöveges és videós vélemények (testimonialok) gyűjtésér
 - **Gyűjtés típusa**: szöveg + videó / csak szöveg / csak videó
 - **5 csillagos értékelés** (kikapcsolható)
 - **Extra mezők**: cég/szerep, közösségi link, fotó, vélemény címe — mind kapcsolható
+- **Fotó egy kattintással**: a beküldő a kamerájával készíthet fotót (mobilon az előlapi kamera nyílik, gépen élő előnézet), vagy képet tölt fel; ha nem tetszik, újrafotózhatja vagy törölheti. A kép négyzetesre vágva, max. 600 px-en megy fel. Videós beküldésnél, ha nincs saját fotó, a felvételből automatikusan kivesz egy képkockát (lecserélhető); a videós kártyán a név mellett jelenik meg
 - **Köszönő oldal**: kép + cím + üzenet, testreszabható
 - **E-mail megerősítés** (opcionális dupla megerősítés a beküldő e-mail címére)
 - **Consent (hozzájárulás)**: kötelező / opcionális / rejtett

@@ -12,7 +12,9 @@ class TC_Shortcodes {
 	public static function init() {
 		add_shortcode( 'testimonial_form', array( __CLASS__, 'render_form' ) );
 		add_shortcode( 'testimonial_wall', array( __CLASS__, 'render_wall' ) );
-		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+		// Register on init, not wp_enqueue_scripts: block themes render the shortcode before
+		// wp_head, and localize/inline data added to a not-yet-registered handle is lost.
+		add_action( 'init', array( __CLASS__, 'register_assets' ) );
 	}
 
 	public static function register_assets() {
@@ -72,6 +74,7 @@ class TC_Shortcodes {
 				'nonce'      => wp_create_nonce( 'tc_submit' ),
 				'maxSeconds' => (int) $settings['video_max_seconds'],
 				'maxMb'      => (int) $settings['video_max_mb'],
+				'photo'      => (int) $settings['show_photo'],
 				'iosNoRecord' => (int) $settings['ios_no_record'],
 				'consentRequired' => ( 'required' === $settings['consent_mode'] ) ? 1 : 0,
 				'i18n'       => array(
@@ -85,6 +88,10 @@ class TC_Shortcodes {
 					'stop'         => $strings['btn_stop'],
 					'retake'       => $strings['btn_retake'],
 					'secLeft'      => $strings['sec_left'],
+					'photoRetake'  => $strings['btn_photo_retake'],
+					'photoTake'    => $strings['btn_photo_take'],
+					'photoHint'    => $strings['photo_hint'],
+					'photoFromVideo' => $strings['photo_from_video'],
 				),
 			)
 		);
@@ -200,9 +207,29 @@ class TC_Shortcodes {
 						</div>
 					<?php endif; ?>
 					<?php if ( $settings['show_photo'] ) : ?>
-						<label class="tc-label"><?php echo esc_html( $strings['label_photo'] ); ?>
-							<input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="tc-input tc-input-file">
-						</label>
+						<div class="tc-label tc-photo">
+							<?php echo esc_html( $strings['label_photo'] ); ?>
+							<div class="tc-photo-box">
+								<div class="tc-photo-frame">
+									<span class="tc-photo-placeholder" aria-hidden="true">📷</span>
+									<video class="tc-photo-live" playsinline muted hidden></video>
+									<img class="tc-photo-img" alt="" hidden>
+								</div>
+								<div class="tc-photo-side">
+									<p class="tc-photo-note"><?php echo esc_html( $strings['photo_hint'] ); ?></p>
+									<div class="tc-photo-actions">
+										<button type="button" class="tc-btn tc-btn-secondary tc-photo-take"><?php echo esc_html( $strings['btn_photo_take'] ); ?></button>
+										<button type="button" class="tc-btn tc-photo-snap" hidden><?php echo esc_html( $strings['btn_photo_snap'] ); ?></button>
+										<button type="button" class="tc-btn tc-btn-secondary tc-photo-cancel" hidden><?php echo esc_html( $strings['btn_cancel'] ); ?></button>
+										<button type="button" class="tc-btn tc-btn-secondary tc-photo-upload"><?php echo esc_html( $strings['btn_photo_upload'] ); ?></button>
+										<button type="button" class="tc-photo-remove" hidden><?php echo esc_html( $strings['btn_photo_remove'] ); ?></button>
+									</div>
+								</div>
+							</div>
+							<?php /* Mobile: opens the front camera directly. Desktop uses the live preview above. */ ?>
+							<input type="file" class="tc-photo-capture" accept="image/*" capture="user" hidden>
+							<input type="file" class="tc-photo-file" accept="image/jpeg,image/png,image/webp" hidden>
+						</div>
 					<?php endif; ?>
 					<?php if ( 'hidden' !== $settings['consent_mode'] ) : ?>
 						<label class="tc-consent">
@@ -322,7 +349,12 @@ class TC_Shortcodes {
 				<span class="tc-badge">👍 <?php echo esc_html( $strings['badge'] ); ?></span>
 				<video src="<?php echo esc_url( $video_url ); ?>" preload="metadata" controls playsinline></video>
 				<div class="tc-video-meta">
-					<span class="tc-video-name"><?php echo esc_html( $data['name'] ); ?></span>
+					<span class="tc-video-who">
+						<?php if ( $data['avatar_id'] ) : ?>
+							<?php echo wp_get_attachment_image( $data['avatar_id'], 'thumbnail', false, array( 'class' => 'tc-avatar tc-avatar-sm', 'alt' => '' ) ); ?>
+						<?php endif; ?>
+						<span class="tc-video-name"><?php echo esc_html( $data['name'] ); ?></span>
+					</span>
 					<?php if ( $show_stars ) { echo self::stars_html( $data['rating'] ); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ } ?>
 				</div>
 			</div>
