@@ -28,6 +28,11 @@
 	box-sizing: border-box;
 }
 
+/* The hidden attribute must win over the display rules below (not every theme resets it). */
+.tc-container [hidden] {
+	display: none !important;
+}
+
 /* Dark theme */
 .tc-theme-dark {
 	--tc-bg: #16232b;

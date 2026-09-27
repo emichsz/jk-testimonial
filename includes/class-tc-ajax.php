@@ -14,6 +14,16 @@ class TC_Ajax {
 		add_action( 'wp_ajax_nopriv_tc_submit', array( __CLASS__, 'handle_submit' ) );
 		add_action( 'wp_ajax_tc_verify', array( __CLASS__, 'handle_verify' ) );
 		add_action( 'wp_ajax_nopriv_tc_verify', array( __CLASS__, 'handle_verify' ) );
+		add_action( 'wp_ajax_tc_nonce', array( __CLASS__, 'handle_nonce' ) );
+		add_action( 'wp_ajax_nopriv_tc_nonce', array( __CLASS__, 'handle_nonce' ) );
+	}
+
+	/**
+	 * Fresh submit nonce for forms served from a page cache (admin-ajax is never cached).
+	 */
+	public static function handle_nonce() {
+		nocache_headers();
+		wp_send_json_success( array( 'nonce' => wp_create_nonce( 'tc_submit' ) ) );
 	}
 
 	public static function handle_submit() {

@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Testimonial Collector
  * Plugin URI:        https://github.com/emichsz/jk-testimonial
- * Description:       Szöveges és videós testimonialok gyűjtése böngészős videófelvétellel, jóváhagyási folyamattal és lapozható megjelenítéssel. Shortcode-ok: [testimonial_form], [testimonial_wall]
- * Version:           1.3.0
+ * Description:       Szöveges és videós testimonialok gyűjtése böngészős videófelvétellel, jóváhagyási folyamattal és lapozható megjelenítéssel. Shortcode-ok: [testimonial_form], [testimonial_wall]; más oldalba ágyazható (tc-embed.js)
+ * Version:           1.4.0
  * Author:            Emich
  * Text Domain:       testimonial-collector
  * Domain Path:       /languages
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TC_VERSION', '1.3.0' );
+define( 'TC_VERSION', '1.4.0' );
 define( 'TC_PLUGIN_FILE', __FILE__ );
 define( 'TC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -29,6 +29,7 @@ require_once TC_PLUGIN_DIR . 'includes/class-tc-settings.php';
 require_once TC_PLUGIN_DIR . 'includes/class-tc-admin.php';
 require_once TC_PLUGIN_DIR . 'includes/class-tc-shortcodes.php';
 require_once TC_PLUGIN_DIR . 'includes/class-tc-ajax.php';
+require_once TC_PLUGIN_DIR . 'includes/class-tc-embed.php';
 require_once TC_PLUGIN_DIR . 'includes/class-tc-updater.php';
 
 /**
@@ -61,6 +62,7 @@ function tc_default_settings() {
 		'video_max_seconds' => 120,
 		'video_max_mb'      => 200,
 		'notify_email'      => get_option( 'admin_email' ),
+		'embed_origins'     => '', // one origin per line; empty = embedding disabled
 		// Text overrides: {key}_hu / {key}_en (empty = built-in default)
 	);
 }
@@ -100,6 +102,7 @@ function tc_init_plugin() {
 	TC_Admin::init();
 	TC_Shortcodes::init();
 	TC_Ajax::init();
+	TC_Embed::init();
 	TC_Updater::init();
 }
 add_action( 'plugins_loaded', 'tc_init_plugin' );

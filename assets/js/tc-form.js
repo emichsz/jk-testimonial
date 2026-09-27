@@ -300,8 +300,34 @@
 			submitBtn.disabled = true;
 			showMessage(i18n.uploading || '…', false);
 
-			fetch(tcForm.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
-				.then(function (r) { return r.json(); })
+			function send() {
+				return fetch(tcForm.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+					.then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); });
+			}
+
+			// A page cache (or a long-open tab) can hand out an expired nonce:
+			// on 403 fetch a fresh one and retry once.
+			function refreshNonce() {
+				var nf = new FormData();
+				nf.append('action', 'tc_nonce');
+				return fetch(tcForm.ajaxUrl, { method: 'POST', body: nf, credentials: 'same-origin' })
+					.then(function (r) { return r.json(); })
+					.then(function (res) {
+						if (!res || !res.success || !res.data || !res.data.nonce) {
+							throw new Error('nonce');
+						}
+						tcForm.nonce = res.data.nonce;
+						fd.set('nonce', tcForm.nonce);
+					});
+			}
+
+			send()
+				.then(function (res) {
+					if (res.status === 403) {
+						return refreshNonce().then(send).then(function (retry) { return retry.data; });
+					}
+					return res.data;
+				})
 				.then(function (data) {
 					if (data && data.success) {
 						form.hidden = true;
@@ -314,8 +340,12 @@
 								msgEl.textContent = data.data.message;
 							}
 							thanks.hidden = false;
-							thanks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							if (window.parent === window) {
+								// In an embed iframe the host page scrolls instead (tc-embed.js).
+								thanks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							}
 						}
+						container.dispatchEvent(new CustomEvent('tc:submitted', { bubbles: true }));
 					} else {
 						submitBtn.disabled = false;
 						showMessage((data && data.data && data.data.message) || i18n.error || 'Error', true);

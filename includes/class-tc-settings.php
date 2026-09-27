@@ -90,6 +90,15 @@ class TC_Settings {
 
 		$out['events'] = sanitize_textarea_field( $input['events'] ?? '' );
 
+		$origins = array();
+		foreach ( explode( "\n", (string) ( $input['embed_origins'] ?? '' ) ) as $line ) {
+			$origin = TC_Embed::normalize_origin( $line );
+			if ( '' !== $origin ) {
+				$origins[] = $origin;
+			}
+		}
+		$out['embed_origins'] = implode( "\n", array_unique( $origins ) );
+
 		$notify              = sanitize_email( $input['notify_email'] ?? '' );
 		$out['notify_email'] = $notify ? $notify : $defaults['notify_email'];
 
@@ -163,6 +172,7 @@ class TC_Settings {
 						<a href="#tc-tab-thankyou" class="nav-tab">💚 <?php esc_html_e( 'Thank you page', 'testimonial-collector' ); ?></a>
 						<a href="#tc-tab-extra" class="nav-tab">🎛️ <?php esc_html_e( 'Extra settings', 'testimonial-collector' ); ?></a>
 						<a href="#tc-tab-notify" class="nav-tab">✉️ <?php esc_html_e( 'Notifications', 'testimonial-collector' ); ?></a>
+						<a href="#tc-tab-embed" class="nav-tab">🔗 <?php esc_html_e( 'Embed', 'testimonial-collector' ); ?></a>
 					</h2>
 
 					<form method="post" action="options.php">
@@ -336,6 +346,42 @@ class TC_Settings {
 								<tr>
 									<th scope="row"><label for="tc_notify_email"><?php esc_html_e( 'Notification email for new submissions', 'testimonial-collector' ); ?></label></th>
 									<td><input type="email" id="tc_notify_email" name="<?php echo esc_attr( $opt ); ?>[notify_email]" value="<?php echo esc_attr( $s['notify_email'] ); ?>" class="regular-text"></td>
+								</tr>
+							</table>
+						</div>
+
+						<div id="tc-tab-embed" class="tc-tab-panel" hidden>
+							<p class="description"><?php esc_html_e( 'Show the form or the wall on another website (WordPress or not). The embedded view runs on this site, so submissions land here in the usual approval queue.', 'testimonial-collector' ); ?></p>
+							<table class="form-table" role="presentation">
+								<tr>
+									<th scope="row"><label for="tc_embed_origins"><?php esc_html_e( 'Allowed sites', 'testimonial-collector' ); ?></label></th>
+									<td>
+										<textarea id="tc_embed_origins" name="<?php echo esc_attr( $opt ); ?>[embed_origins]" rows="3" class="large-text code" placeholder="https://business.example.com"><?php echo esc_textarea( $s['embed_origins'] ); ?></textarea>
+										<p class="description"><?php esc_html_e( 'One site per line (e.g. https://business.example.com). Only these sites may embed the form or wall. Leave empty to turn embedding off.', 'testimonial-collector' ); ?></p>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row"><?php esc_html_e( 'Embed code', 'testimonial-collector' ); ?></th>
+									<td>
+										<?php
+										$loader = '<script src="' . TC_PLUGIN_URL . 'assets/js/tc-embed.js" data-tc-site="' . TC_Embed::endpoint_url() . '" async></script>';
+										$code_form = '<div data-tc-embed="form"></div>' . "\n" . $loader;
+										$code_wall = '<div data-tc-embed="wall"></div>' . "\n" . $loader;
+										?>
+										<p><strong><?php esc_html_e( 'Submission form', 'testimonial-collector' ); ?></strong></p>
+										<textarea readonly rows="3" class="large-text code" onclick="this.select()"><?php echo esc_textarea( $code_form ); ?></textarea>
+										<p><strong><?php esc_html_e( 'Testimonials wall', 'testimonial-collector' ); ?></strong></p>
+										<textarea readonly rows="3" class="large-text code" onclick="this.select()"><?php echo esc_textarea( $code_wall ); ?></textarea>
+										<p class="description">
+											<?php esc_html_e( 'Paste it into the other site\'s HTML where the block should appear. The frame resizes itself to fit and may use the camera for video recording.', 'testimonial-collector' ); ?><br>
+											<?php esc_html_e( 'Optional attributes on the div:', 'testimonial-collector' ); ?>
+											<code>data-tc-event="…"</code> — <?php esc_html_e( 'pin to one event (must match a line in the Events list),', 'testimonial-collector' ); ?>
+											<code>data-tc-per-page="4"</code> — <?php esc_html_e( 'wall page size.', 'testimonial-collector' ); ?>
+										</p>
+										<p class="description">
+											<?php esc_html_e( 'If the frame stays blank, a security plugin or the server may be sending an X-Frame-Options header — allow framing for the sites above there.', 'testimonial-collector' ); ?>
+										</p>
+									</td>
 								</tr>
 							</table>
 						</div>
