@@ -15,6 +15,8 @@ class TC_Admin {
 		add_action( 'admin_post_tc_moderate', array( __CLASS__, 'handle_moderate' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'metabox' ) );
 		add_action( 'save_post_' . TC_CPT, array( __CLASS__, 'save_metabox' ), 10, 2 );
+		add_action( 'quick_edit_custom_box', array( __CLASS__, 'quick_edit_box' ), 10, 2 );
+		add_action( 'save_post_' . TC_CPT, array( __CLASS__, 'save_quick_edit' ), 10, 1 );
 		add_action( 'admin_menu', array( __CLASS__, 'pending_badge' ), 99 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 	}
@@ -29,7 +31,90 @@ class TC_Admin {
 				wp_enqueue_media();
 				wp_enqueue_script( 'tc-admin-edit', TC_PLUGIN_URL . 'assets/js/tc-admin-edit.js', array( 'jquery' ), TC_VERSION, true );
 			}
+
+			// List screen: prefill the event field in Quick Edit.
+			if ( 'edit' === $screen->base ) {
+				wp_enqueue_script( 'tc-admin-list', TC_PLUGIN_URL . 'assets/js/tc-admin-list.js', array( 'jquery', 'inline-edit-post' ), TC_VERSION, true );
+			}
 		}
+	}
+
+	/**
+	 * Configured events, one per line in the settings.
+	 */
+	protected static function configured_events() {
+		$settings = tc_get_settings();
+		return array_values( array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) ) );
+	}
+
+	/**
+	 * Store the event meta. Only a value from the configured list is
+	 * accepted (free text if there is no list); empty removes it.
+	 */
+	protected static function save_event( $post_id, $event ) {
+		$events = self::configured_events();
+		if ( '' !== $event && ! empty( $events ) && ! in_array( $event, $events, true ) ) {
+			return;
+		}
+		if ( '' !== $event ) {
+			update_post_meta( $post_id, '_tc_event', $event );
+		} else {
+			delete_post_meta( $post_id, '_tc_event' );
+		}
+	}
+
+	/**
+	 * Event field: a dropdown of the configured events, or a text input if
+	 * there is no list. An existing value no longer in the list is kept.
+	 */
+	protected static function event_field( $name, $id, $current, $class ) {
+		$events = self::configured_events();
+		if ( empty( $events ) ) {
+			echo '<input type="text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $current ) . '" class="' . esc_attr( $class ) . '">';
+			return;
+		}
+		echo '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" class="' . esc_attr( $class ) . '">';
+		echo '<option value="">' . esc_html__( '— None —', 'testimonial-collector' ) . '</option>';
+		foreach ( $events as $ev ) {
+			echo '<option value="' . esc_attr( $ev ) . '" ' . selected( $current, $ev, false ) . '>' . esc_html( $ev ) . '</option>';
+		}
+		if ( '' !== $current && ! in_array( $current, $events, true ) ) {
+			echo '<option value="' . esc_attr( $current ) . '" selected>' . esc_html( $current ) . '</option>';
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Quick Edit: event dropdown in the inline edit row.
+	 */
+	public static function quick_edit_box( $column, $post_type ) {
+		if ( 'tc_event' !== $column || TC_CPT !== $post_type ) {
+			return;
+		}
+		wp_nonce_field( 'tc_quick_edit', 'tc_quick_nonce' );
+		?>
+		<fieldset class="inline-edit-col-right">
+			<div class="inline-edit-col">
+				<label class="inline-edit-tc-event">
+					<span class="title"><?php esc_html_e( 'Event / program', 'testimonial-collector' ); ?></span>
+					<span class="input-text-wrap"><?php self::event_field( 'tc_event', '', '', 'tc-quick-event' ); ?></span>
+				</label>
+			</div>
+		</fieldset>
+		<?php
+	}
+
+	/**
+	 * Save the Quick Edit event field (the full edit screen has its own nonce).
+	 */
+	public static function save_quick_edit( $post_id ) {
+		if ( ! isset( $_POST['tc_quick_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['tc_quick_nonce'] ) ), 'tc_quick_edit' ) ) {
+			return;
+		}
+		if ( TC_CPT !== get_post_type( $post_id ) || ! current_user_can( 'edit_post', $post_id ) || ! isset( $_POST['tc_event'] ) ) {
+			return;
+		}
+		self::save_event( $post_id, sanitize_text_field( wp_unslash( $_POST['tc_event'] ) ) );
 	}
 
 	/**
@@ -58,6 +143,7 @@ class TC_Admin {
 			'tc_type'    => __( 'Type', 'testimonial-collector' ),
 			'tc_rating'  => __( 'Rating', 'testimonial-collector' ),
 			'tc_excerpt' => __( 'Testimonial', 'testimonial-collector' ),
+			'tc_event'   => __( 'Event / program', 'testimonial-collector' ),
 			'tc_contact' => __( 'Contact', 'testimonial-collector' ),
 			'tc_status'  => __( 'Status', 'testimonial-collector' ),
 			'date'       => __( 'Date', 'testimonial-collector' ),
@@ -97,9 +183,12 @@ class TC_Admin {
 				if ( $data['role'] ) {
 					echo '<br><em>' . esc_html( $data['role'] ) . '</em>';
 				}
-				if ( $data['event'] ) {
-					echo '<br>' . esc_html( $data['event'] );
-				}
+				break;
+
+			case 'tc_event':
+				echo $data['event'] ? esc_html( $data['event'] ) : '<span aria-hidden="true">—</span>';
+				// Raw value for the Quick Edit prefill (tc-admin-list.js).
+				echo '<div class="hidden tc-event-value">' . esc_html( $data['event'] ) . '</div>';
 				break;
 
 			case 'tc_status':
@@ -170,8 +259,6 @@ class TC_Admin {
 
 	public static function render_metabox( $post ) {
 		$data       = TC_CPT::get_data( $post->ID );
-		$settings   = tc_get_settings();
-		$events     = array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) );
 		$avatar_url = $data['avatar_id'] ? wp_get_attachment_image_url( $data['avatar_id'], 'thumbnail' ) : '';
 		$video_url  = $data['video_id'] ? wp_get_attachment_url( $data['video_id'] ) : '';
 		wp_nonce_field( 'tc_save_details', 'tc_details_nonce' );
@@ -198,27 +285,7 @@ class TC_Admin {
 		</p>
 		<p class="tc-mb-field">
 			<label for="tc_mb_event"><strong><?php esc_html_e( 'Event / program', 'testimonial-collector' ); ?></strong></label>
-			<?php if ( ! empty( $events ) ) : ?>
-				<select id="tc_mb_event" name="tc_event" class="widefat">
-					<option value=""><?php esc_html_e( '— None —', 'testimonial-collector' ); ?></option>
-					<?php
-					$known = false;
-					foreach ( $events as $ev ) {
-						$sel = selected( $data['event'], $ev, false );
-						if ( '' !== $sel ) {
-							$known = true;
-						}
-						echo '<option value="' . esc_attr( $ev ) . '" ' . $sel . '>' . esc_html( $ev ) . '</option>';
-					}
-					// Keep an existing value that is no longer in the configured list.
-					if ( ! $known && '' !== $data['event'] ) {
-						echo '<option value="' . esc_attr( $data['event'] ) . '" selected>' . esc_html( $data['event'] ) . '</option>';
-					}
-					?>
-				</select>
-			<?php else : ?>
-				<input type="text" id="tc_mb_event" name="tc_event" value="<?php echo esc_attr( $data['event'] ); ?>" class="widefat">
-			<?php endif; ?>
+			<?php self::event_field( 'tc_event', 'tc_mb_event', $data['event'], 'widefat' ); ?>
 		</p>
 		<p class="tc-mb-field">
 			<label for="tc_mb_rating"><strong><?php esc_html_e( 'Rating', 'testimonial-collector' ); ?></strong></label>
@@ -288,8 +355,6 @@ class TC_Admin {
 			return;
 		}
 
-		$settings = tc_get_settings();
-
 		// Text fields: empty removes the meta to keep things clean.
 		$text_map = array(
 			'_tc_role'     => 'tc_role',
@@ -336,15 +401,7 @@ class TC_Admin {
 		update_post_meta( $post_id, '_tc_consent', empty( $_POST['tc_consent'] ) ? 0 : 1 );
 
 		// Event: only accept a value from the configured list; free text if no list.
-		$event  = isset( $_POST['tc_event'] ) ? sanitize_text_field( wp_unslash( $_POST['tc_event'] ) ) : '';
-		$events = array_filter( array_map( 'trim', explode( "\n", (string) $settings['events'] ) ) );
-		if ( '' === $event || empty( $events ) || in_array( $event, $events, true ) ) {
-			if ( '' !== $event ) {
-				update_post_meta( $post_id, '_tc_event', $event );
-			} else {
-				delete_post_meta( $post_id, '_tc_event' );
-			}
-		}
+		self::save_event( $post_id, isset( $_POST['tc_event'] ) ? sanitize_text_field( wp_unslash( $_POST['tc_event'] ) ) : '' );
 
 		// Attachments: id or 0 (clear). Also parent the attachment to this post.
 		foreach ( array( '_tc_avatar_id' => 'tc_avatar_id', '_tc_video_id' => 'tc_video_id' ) as $meta_key => $field ) {
